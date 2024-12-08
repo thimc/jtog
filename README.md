@@ -12,6 +12,14 @@ source code.
 	 -l	inline type defintions (default true)
 	 -o	appends "omitempty" to the json tag
 
+### Examples
+
+	jtog file1.json file2.json ...
+
+or
+
+	jtog <file1.json
+
 ## License
 
 MIT
