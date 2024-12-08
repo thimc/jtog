@@ -48,7 +48,6 @@ func main() {
 	if len(args) == 0 {
 		args = append(args, "-")
 	}
-
 	for _, arg := range args {
 		f := os.Stdin
 		if arg != "-" {
@@ -60,19 +59,18 @@ func main() {
 			}
 			defer f.Close()
 		}
-
 		buf, err := io.ReadAll(f)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-
 		var data map[string]interface{}
 		if err := json.Unmarshal(buf, &data); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		dump(parse(map[string]interface{}{filepath.Base(os.Args[0]): data}, *inlineflag, *omitflag), *inlineflag, 0)
+		fields := parse(map[string]interface{}{filepath.Base(os.Args[0]): data}, *inlineflag, *omitflag)
+		dump(fields, *inlineflag, 0)
 		fmt.Print(sb.String())
 	}
 }
@@ -131,31 +129,32 @@ func parse(data map[string]interface{}, inline, omitempty bool) []Field {
 	if !omitempty {
 		tag = ""
 	}
-	for key, value := range data {
-		switch v := value.(type) {
+	for k, v := range data {
+		k = k + tag
+		switch v := v.(type) {
 		case map[string]interface{}:
 			f := parse(v, inline, omitempty)
-			fields = append(fields, Field{Name: strings.Title(key), Type: "struct", Tag: key + tag, Fields: f})
+			fields = append(fields, Field{Name: strings.Title(k), Type: "struct", Tag: k, Fields: f})
 		case []interface{}:
 			typ := "any"
 			if len(v) > 0 {
 				typ = fmt.Sprint(reflect.TypeOf(v[0]))
 			}
-			fields = append(fields, Field{Name: strings.Title(key), Type: fmt.Sprintf("[]%s", typ), Tag: key + tag})
+			fields = append(fields, Field{Name: strings.Title(k), Type: fmt.Sprintf("[]%s", typ), Tag: k})
 		case float64:
 			typ := "float64"
-			if _, err := strconv.Atoi(fmt.Sprint(value)); err == nil {
+			if _, err := strconv.Atoi(fmt.Sprint(v)); err == nil {
 				typ = "int"
-			} else if _, err := strconv.ParseInt(fmt.Sprint(value), 10, 64); err == nil {
+			} else if _, err := strconv.ParseInt(fmt.Sprint(v), 10, 64); err == nil {
 				typ = "int64"
 			}
-			fields = append(fields, Field{Name: strings.Title(key), Type: typ, Tag: key + tag})
+			fields = append(fields, Field{Name: strings.Title(k), Type: typ, Tag: k})
 		case bool:
-			fields = append(fields, Field{Name: strings.Title(key), Type: "bool", Tag: key + tag})
+			fields = append(fields, Field{Name: strings.Title(k), Type: "bool", Tag: k})
 		case string:
-			fields = append(fields, Field{Name: strings.Title(key), Type: "string", Tag: key + tag})
+			fields = append(fields, Field{Name: strings.Title(k), Type: "string", Tag: k})
 		case int:
-			fields = append(fields, Field{Name: strings.Title(key), Type: "int", Tag: key + tag})
+			fields = append(fields, Field{Name: strings.Title(k), Type: "int", Tag: k})
 		}
 	}
 	return fields
