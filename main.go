@@ -1,10 +1,9 @@
 // Command jtog is a command line tool that converts JSON to Go source code.
 //
-// Usage: jtog [ -i=bool ] [ -l=bool ] [ -o=bool ] [ file ... ]
+// Usage: jtog [ -l=bool ] [ -o=bool ] [ file ... ]
 // If no file path(s) are specified as flags then data from standard
 // input is assumed.
 //
-//	-i	indent using spaces
 //	-l	inline type defintions (default true)
 //	-o	appends "omitempty" to the json tag
 package main
@@ -22,7 +21,6 @@ import (
 )
 
 var (
-	indentflag = flag.Bool("i", false, "indent using spaces")
 	inlineflag = flag.Bool("l", true, "inline type defintions")
 	omitflag   = flag.Bool("o", false, "appends \"omitempty\" to the json tag")
 
@@ -76,12 +74,8 @@ func main() {
 }
 
 func emit(indent int, format string, a ...any) {
-	ind := "	"
-	if *indentflag {
-		ind = "    "
-	}
 	for range indent {
-		sb.WriteString(ind)
+		sb.WriteString("\t")
 	}
 	sb.WriteString(fmt.Sprintf(format, a...))
 }
@@ -100,7 +94,7 @@ func dump(fields []Field, inline bool, indent int) {
 					dump([]Field{sf}, inline, indent)
 					continue
 				}
-				emit(indent, "%s	%s	`json:\"%s\"`\n", sf.Name, sf.Type, sf.Tag)
+				emit(indent, "%s\t%s\t`json:\"%s\"`\n", sf.Name, sf.Type, sf.Tag)
 			}
 			indent--
 			if indent == 0 {
@@ -110,7 +104,7 @@ func dump(fields []Field, inline bool, indent int) {
 			}
 			continue
 		}
-		emit(indent, "%s	%s	`json:\"%s\"`\n", f.Name, f.Type, f.Tag)
+		emit(indent, "%s\t%s\t`json:\"%s\"`\n", f.Name, f.Type, f.Tag)
 		buf, i := sb.String(), indent
 		sb.Reset()
 		indent = 0
